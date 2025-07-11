@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Guide Daily Schedule</title>
+  <style>
+  <style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #1e1e2f;
+    color: #f1f1f1;
+  }
+
+  .container {
+    max-width: 1000px;
+    margin: 50px auto;
+    background-color: #2a2a3b;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+  }
+
+  h2, h3 {
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 25px;
+  }
+
+  label {
+    font-weight: 600;
+    margin-top: 12px;
+    display: block;
+    color: #ddd;
+  }
+
+  input, select, button {
+    margin: 8px 0;
+    padding: 10px 14px;
+    width: 100%;
+    background-color: #3a3a4d;
+    color: #ffffff;
+    border: 1px solid #555;
+    border-radius: 8px;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: 0.2s;
+  }
+
+  input:focus, select:focus {
+    border-color: #00bcd4;
+    outline: none;
+    background-color: #44445a;
+  }
+
+  button {
+    background-color: #00bcd4;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+  }
+
+  button:hover {
+    background-color: #0192a2;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 14px;
+    background-color: #333;
+    color: #fff;
+  }
+
+  th, td {
+    border: 1px solid #555;
+    padding: 12px;
+    text-align: left;
+  }
+
+  th {
+    background-color: #444;
+    color: #eee;
+  }
+
+  tr:nth-child(even) {
+    background-color: #3a3a3a;
+  }
+
+  .visit-section {
+    margin-top: 12px;
+    background-color: #2f2f3f;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px dashed #666;
+  }
+
+  .visit-section label {
+    margin-top: 10px;
+  }
+
+  .visit-section button {
+    width: 35px;
+    height: 35px;
+    padding: 0;
+    font-size: 20px;
+    font-weight: bold;
+    background-color: #666;
+    color: #fff;
+    border-radius: 50%;
+    border: none;
+  }
+
+  .visit-section button:hover {
+    background-color: #888;
+  }
+
+  .count {
+    min-width: 25px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+    display: inline-block;
+    color: #fff;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid #555;
+    margin: 30px 0;
+  }
+
+  .editBtn, .deleteBtn {
+    background-color: #e67e22;
+    color: #fff;
+    padding: 6px 12px;
+    margin-right: 5px;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+
+  .deleteBtn {
+    background-color: #e74c3c;
+  }
+
+  .editBtn:hover {
+    background-color: #d35400;
+  }
+
+  .deleteBtn:hover {
+    background-color: #c0392b;
+  }
+
+  @media (max-width: 768px) {
+    .container {
+      padding: 20px;
+      margin: 20px;
+    }
+
+    input, select, button {
+      font-size: 13px;
+    }
+
+    table {
+      font-size: 12px;
+    }
+  }
+</style>
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Admin Panel: Add Daily Shift Schedule</h2>
+	
+	 <button onclick="window.open('guide.html', '_blank')" style="padding: 10px 16px; margin-bottom: 20px; background-color: #00bcd4; color: white; border: none; border-radius: 6px; cursor: pointer;">
+      Open Guide Display
+    </button>
+
+    <form id="mainForm">
+      <label>Date:</label>
+      <input type="date" id="scheduleDate" required>
+
+      <label>Shift:</label>
+      <select id="shift" required>
+        <option value="">Select Shift</option>
+        <option value="Morning">Morning</option>
+        <option value="Evening">Evening</option>
+      </select>
+
+      <label>Operation Admin Name:</label>
+      <select id="adminName" required>
+        <option value="">Select Admin</option>
+        <option>Maryam Anwar</option><option>Mohamed G</option>
+        <option>Mohamed A</option><option>Salyim</option>
+        <option value="other">Other (type below)</option>
+      </select>
+      <input type="text" id="adminNameOther" placeholder="If other, type here" style="display:none;">
+
+      <button type="submit">Create Schedule</button>
+    </form>
+
+    <div id="schedules"></div>
+  </div>
+
+  <script>
+    const mainForm = document.getElementById('mainForm');
+    const schedulesDiv = document.getElementById('schedules');
+    const addedSchedules = new Set();
+    const shiftAssignments = new Map();
+
+    document.getElementById('adminName').addEventListener('change', () => {
+      document.getElementById('adminNameOther').style.display =
+        document.getElementById('adminName').value === 'other' ? 'block' : 'none';
+    });
+
+    mainForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const date = document.getElementById('scheduleDate').value;
+      const shift = document.getElementById('shift').value;
+      const adminSelect = document.getElementById('adminName').value;
+      const adminOther = document.getElementById('adminNameOther').value.trim();
+      const adminName = adminSelect === 'other' ? adminOther : adminSelect;
+      const scheduleKey = `${date}-${shift}`;
+
+      if (addedSchedules.has(scheduleKey)) {
+        alert('Schedule for this date and shift already exists.');
+        return;
+      }
+
+      addedSchedules.add(scheduleKey);
+      shiftAssignments.set(scheduleKey, new Set());
+
+      const container = document.createElement('div');
+      container.innerHTML = `
+        <h3>${date} - ${shift} Shift (Admin: ${adminName})</h3>
+        <form class="guideForm">
+          <label>Guide Name:</label>
+          <select required class="guideSelect"></select>
+
+          <label>Break Start:</label>
+          <input type="time">
+          <label>Break End:</label>
+          <input type="time">
+
+          <label>Reliever Guide Name:</label>
+          <select class="relieverSelect"></select>
+
+          <label>Location:</label>
+          <select class="location">
+            <option value="">Select Location</option>
+            <option>Esc</option><option>Reception</option><option>Outdoor</option><option>Old E</option>
+            <option>Old S</option><option>Bridge E</option><option>Bridge M</option><option>Bridge Exit</option>
+            <option>Future</option><option>Future Exit</option><option>Souvenir</option>
+          </select>
+
+          <div class="visit-section">
+            <label>Visit Type:</label>
+            <select class="visitType">
+              <option value="">Select Visit Type</option>
+              <option>no visit</option><option>school</option><option>delegation</option><option>influencer</option>
+              <option>media</option><option>Official</option><option>DM</option><option>VIP (ticket)</option>
+            </select>
+
+            <label>Visit Time:</label>
+            <input type="time">
+            <label>Number of Visitors:</label>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button type="button" class="dec">-</button>
+              <span class="count">1</span>
+              <button type="button" class="inc">+</button>
+            </div>
+          </div>
+
+          <button type="submit">Add Guide Info</button>
+        </form>
+        <table>
+          <thead>
+            <tr>
+              <th>Guide</th><th>Break</th><th>Reliever</th><th>Location</th><th>Visit Info</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+		<button class="submitToDisplayBtn" style="margin-top: 15px;">Submit to Display</button>
+
+        <hr>
+      `;
+
+      schedulesDiv.appendChild(container);
+
+      const guideForm = container.querySelector('.guideForm');
+      const guideSelect = container.querySelector('.guideSelect');
+      const relieverSelect = container.querySelector('.relieverSelect');
+      const location = container.querySelector('.location');
+      const visitTypeSelect = container.querySelector('.visitType');
+      const countSpan = container.querySelector('.count');
+      const visitSection = container.querySelector('.visit-section');
+      const guideOptions = ["Prakash", "Sashikala", "Junaid", "Harry","sayeed", "Mohamed S", "Sheila", "Raymond", "Victoria", "Sharoon", "Shahid", "Oksana", "Iulia", "Abdulghani", "Salma", "Saleha", "Naeima", "Sakina", "Alya", "Shahraban", "Sara"];
+      let count = 1;
+
+      function populateGuideDropdowns() {
+        const assigned = shiftAssignments.get(scheduleKey) || new Set();
+        guideSelect.innerHTML = `<option value="">Select Guide</option>`;
+        relieverSelect.innerHTML = `<option value="">Select Reliever</option>`;
+        guideOptions.forEach(name => {
+          const guideOption = document.createElement('option');
+          guideOption.value = name;
+          guideOption.textContent = assigned.has(name) ? `${name} (assigned)` : name;
+          guideOption.disabled = assigned.has(name);
+          guideSelect.appendChild(guideOption);
+
+          const relieverOption = document.createElement('option');
+          relieverOption.value = name;
+          relieverOption.textContent = name;
+          relieverSelect.appendChild(relieverOption);
+        });
+      }
+
+      populateGuideDropdowns();
+
+      container.querySelector('.inc').onclick = () => {
+        count++;
+        countSpan.textContent = count;
+      };
+
+      container.querySelector('.dec').onclick = () => {
+        if (count > 1) count--;
+        countSpan.textContent = count;
+      };
+
+      function updateVisitSection() {
+        visitSection.style.display =
+          location.value === 'Reception' || visitTypeSelect.value === 'no visit'
+            ? 'none'
+            : 'block';
+      }
+
+      location.addEventListener('change', updateVisitSection);
+      visitTypeSelect.addEventListener('change', updateVisitSection);
+      updateVisitSection();
+
+      guideForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const inputs = guideForm.querySelectorAll('input');
+        const breakStart = inputs[0].value;
+        const breakEnd = inputs[1].value;
+        const visitTime = inputs[2].value;
+        const guideName = guideSelect.value;
+        const reliever = relieverSelect.value;
+        const loc = location.value;
+        const visitType = visitTypeSelect.value;
+
+        const guideSchedule = {
+          date,
+          shift,
+          admin: adminName,
+          guide: guideName,
+          breakStart,
+          breakEnd,
+          reliever,
+          location: loc,
+          visitType,
+          visitTime,
+          visitorCount: count
+        };
+
+        let allSchedules = JSON.parse(localStorage.getItem("guideSchedules")) || [];
+        allSchedules.push(guideSchedule);
+        localStorage.setItem("guideSchedules", JSON.stringify(allSchedules));
+
+        const tbody = container.querySelector('tbody');
+        const row = tbody.insertRow();
+row.innerHTML = `
+  <td>${guideName}</td>
+  <td>${breakStart || '-'} - ${breakEnd || '-'}</td>
+  <td>${reliever || '-'}</td>
+  <td>${loc}</td>
+  <td>${(loc !== 'Reception' && visitType !== 'no visit')
+      ? `${visitType} at ${visitTime || '-'}, Visitors: ${count}`
+      : '-'}</td>
+  <td>
+    <button class="editBtn">Edit</button>
+    <button class="deleteBtn">Delete</button>
+  </td>
+`;
+
+
+        // Add to shift map
+        shiftAssignments.get(scheduleKey).add(guideName);
+
+        // Save edit/delete handlers
+        row.querySelector('.deleteBtn').onclick = () => {
+          row.remove();
+          shiftAssignments.get(scheduleKey).delete(guideName);
+          allSchedules = allSchedules.filter(s =>
+            !(s.date === date && s.shift === shift && s.guide === guideName)
+          );
+          localStorage.setItem("guideSchedules", JSON.stringify(allSchedules));
+          populateGuideDropdowns();
+        };
+
+        row.querySelector('.editBtn').onclick = () => {
+          guideSelect.value = guideName;
+          guideForm.querySelectorAll('input')[0].value = breakStart;
+          guideForm.querySelectorAll('input')[1].value = breakEnd;
+          relieverSelect.value = reliever;
+          location.value = loc;
+          visitTypeSelect.value = visitType;
+          guideForm.querySelectorAll('input')[2].value = visitTime;
+          count = guideSchedule.visitorCount;
+          countSpan.textContent = count;
+
+          row.remove();
+          shiftAssignments.get(scheduleKey).delete(guideName);
+          allSchedules = allSchedules.filter(s =>
+            !(s.date === date && s.shift === shift && s.guide === guideName)
+          );
+          localStorage.setItem("guideSchedules", JSON.stringify(allSchedules));
+          populateGuideDropdowns();
+        };
+
+        // Reset form for next entry
+        guideForm.reset();
+        count = 1;
+        countSpan.textContent = '1';
+        updateVisitSection();
+        populateGuideDropdowns();
+      });
+    });
+	const submitButton = container.querySelector('.submitToDisplayBtn');
+
+submitButton.addEventListener('click', () => {
+  const rows = container.querySelectorAll("tbody tr");
+  if (rows.length === 0) {
+    alert("No guide assigned yet to submit.");
+    return;
+  }
+
+  alert("Shift schedule submitted successfully to display!");
+});
+
+
+  </script>
+</body>
+</html>

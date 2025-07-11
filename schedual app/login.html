@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login - Staff Only</title>
+</head>
+<body style="text-align:center; padding:40px; font-family:sans-serif;">
+  <h2>Restricted Area</h2>
+  <p>This site is for staff only. Please log in.</p>
+
+  <button onclick="netlifyIdentity.open()">Login</button>
+
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <script>
+    netlifyIdentity.init();
+  </script>
+</body>
+</html>

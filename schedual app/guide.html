@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Guide Daily Schedule</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f7fa;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 10px;
+    }
+
+    .dashboard-container {
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    .date-box {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    input[type="date"] {
+      padding: 10px 16px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      transition: 0.3s;
+    }
+
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background-color: #ffffff;
+      border-left: 6px solid #3498db;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      color: #2c3e50;
+      font-size: 18px;
+    }
+
+    .card span {
+      font-size: 24px;
+      color: #3498db;
+      font-weight: bold;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    th, td {
+      padding: 14px 18px;
+      text-align: left;
+      border-bottom: 1px solid #ecf0f1;
+    }
+
+    th {
+      background-color: #3498db;
+      color: white;
+      font-weight: 600;
+    }
+
+    td {
+      background-color: #fff;
+      color: #2f3640;
+    }
+
+    .empty-row {
+      text-align: center;
+      color: #999;
+      font-style: italic;
+      background-color: #fff;
+    }
+
+    @media (max-width: 768px) {
+      .summary-cards {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .summary-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <h1>Guide Schedule Dashboard</h1>
+
+    <div class="date-box">
+      <input type="date" id="datePicker">
+    </div>
+
+    <div class="summary-cards">
+      <div class="card">
+        <h3>Total Guides Assigned</h3>
+        <span id="totalGuides">0</span>
+      </div>
+      <div class="card">
+        <h3>Total Visits</h3>
+        <span id="totalVisits">0</span>
+      </div>
+      <div class="card">
+        <h3>On Break Now</h3>
+        <span id="guidesOnBreak">0</span>
+      </div>
+      <div class="card">
+        <h3>On Location Now</h3>
+        <span id="guidesOnLocation">0</span>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Guide</th>
+          <th>Shift</th>
+          <th>Break</th>
+          <th>Reliever</th>
+          <th>Location</th>
+          <th>Visit Info</th>
+        </tr>
+      </thead>
+      <tbody id="scheduleBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const dateInput = document.getElementById("datePicker");
+    const tableBody = document.getElementById("scheduleBody");
+
+    function getToday() {
+      return new Date().toISOString().split("T")[0];
+    }
+
+    function loadSchedule(date) {
+      const allSchedules = JSON.parse(localStorage.getItem("guideSchedules")) || [];
+      const schedules = allSchedules.filter(s => s.date === date);
+
+      const now = new Date();
+      const currentTime = now.toTimeString().split(':').slice(0, 2).join(':');
+
+      let totalGuides = 0;
+      let totalVisits = 0;
+      let guidesOnBreak = 0;
+      let guidesOnLocation = 0;
+
+      tableBody.innerHTML = "";
+
+      if (schedules.length === 0) {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td class="empty-row" colspan="6">No schedule found for ${date}</td>`;
+        tableBody.appendChild(row);
+      } else {
+        schedules.forEach(s => {
+          totalGuides++;
+
+          const isVisit = s.location !== "Reception" && s.visitType !== "no visit";
+          if (isVisit) totalVisits++;
+
+          // Check if guide is on break now
+          if (s.breakStart && s.breakEnd && currentTime >= s.breakStart && currentTime <= s.breakEnd) {
+            guidesOnBreak++;
+          } else {
+            guidesOnLocation++;
+          }
+
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${s.guide}</td>
+            <td>${s.shift}</td>
+            <td>${s.breakStart || "-"} - ${s.breakEnd || "-"}</td>
+            <td>${s.reliever || "-"}</td>
+            <td>${s.location}</td>
+            <td>${isVisit
+              ? `${s.visitType} at ${s.visitTime || "-"}, ${s.visitorCount || 0} visitors`
+              : "-"}</td>
+          `;
+          tableBody.appendChild(row);
+        });
+      }
+
+      // Update the summary cards
+      document.getElementById("totalGuides").textContent = totalGuides;
+      document.getElementById("totalVisits").textContent = totalVisits;
+      document.getElementById("guidesOnBreak").textContent = guidesOnBreak;
+      document.getElementById("guidesOnLocation").textContent = guidesOnLocation;
+    }
+
+    // Initialize
+    dateInput.value = getToday();
+    loadSchedule(dateInput.value);
+
+    // Reload on date change
+    dateInput.addEventListener("change", () => {
+      loadSchedule(dateInput.value);
+    });
+
+    // Auto-refresh every 30 seconds
+    setInterval(() => {
+      loadSchedule(dateInput.value);
+    }, 30000);
+  </script>
+</body>
+</html>
